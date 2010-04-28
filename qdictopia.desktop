@@ -1,0 +1,10 @@
+[Translation]
+File=QtopiaApplications
+Context=QDictopia
+[Desktop Entry]
+Comment[]=A Dictionary Program
+Exec=qdictopia
+Icon=qdictopia/QDictopia
+Type=Application
+Name[]=Dictionary
+Categories=MainApplications

@@ -1,0 +1,21 @@
+* Version 0.0.5
+	- Move dictionary files back to StarDict's default path.
+	- Implement UTF-8 to Unicode conversion to avoid unreadable code.
+
+* Version 0.0.4
+	- New icon changed.
+	- "Clear text" menu option added.
+	- "Dictionaries" menu to list available dictionary's information.
+
+* Version 0.0.3
+	- Search quickly & accurately.
+	- Multi-dictionary support.
+
+* Version 0.0.2
+	- Fix word translation browser to read only.
+	- Move dictionary files to QTOPIA_HOME/Applications/Dictionary/dic
+	- Warning if no dictionary file.
+	- Add help files.
+
+* Version 0.0.1
+	- Initial release.
