@@ -2,6 +2,7 @@
 #define _QDICTOPIA_H_
 
 #include <QMainWindow>
+#include <QMenuBar>
 
 #include "mainwindow.h"
 

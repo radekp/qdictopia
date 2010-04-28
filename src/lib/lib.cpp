@@ -513,7 +513,8 @@ inline const gchar *offset_index::read_first_on_page_key(glong page_idx)
 {
 	fseek(idxfile, wordoffset[page_idx], SEEK_SET);
 	guint32 page_size=wordoffset[page_idx+1]-wordoffset[page_idx];
-	fread(wordentry_buf, std::min(sizeof(wordentry_buf), page_size), 1, idxfile); //TODO: check returned values, deal with word entry that strlen>255.
+        guint32 min = (sizeof(wordentry_buf) < page_size ? sizeof(wordentry_buf) : page_size);
+        fread(wordentry_buf, min, 1, idxfile); //TODO: check returned values, deal with word entry that strlen>255.
 	return wordentry_buf;
 }
 

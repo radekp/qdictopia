@@ -4,6 +4,7 @@ QDictOpia::QDictOpia(QWidget* parent, Qt::WindowFlags flags) : QMainWindow(paren
 {
 	setWindowTitle(tr("QDictopia"));
 	
-	mMainWindow = new MainWindow(this);
+        QMenu *menu = menuBar()->addMenu("&File");
+        mMainWindow = new MainWindow(this, 0, menu);
 	setCentralWidget(mMainWindow);
 }

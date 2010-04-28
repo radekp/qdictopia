@@ -7,9 +7,12 @@
 #include <QListWidget>
 #include <QDir>
 #include <QKeyEvent>
-#include <QSoftMenuBar>
 #include <QMenu>
 #include <QAction>
+
+#ifdef QTOPIA
+#include <QSoftMenuBar>
+#endif
 
 #include "lib/lib.h"
 #include "wordbrowser.h"
@@ -23,7 +26,7 @@ class MainWindow : public QWidget
 	Q_OBJECT
 
 public:
-	MainWindow(QWidget* parent = 0, Qt::WindowFlags f = 0);
+        MainWindow(QWidget* parent = 0, Qt::WindowFlags f = 0, QMenu *menu = 0);
 	~MainWindow();
 
 protected:

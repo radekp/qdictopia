@@ -3,8 +3,12 @@
 
 #include "mainwindow.h"
 
-MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f), mLineEdit(NULL)
+MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f, QMenu *menu) : QWidget(parent, f), mLineEdit(NULL)
 {
+#ifdef QTOPIA
+        Q_UNUSED(menu);
+#endif
+
 	if (loadDicts() == false) {
 		QTimer::singleShot(0, this, SLOT(slotWarning()));
 	} else {
@@ -12,11 +16,15 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f),
 		mLayout = new QGridLayout(this);
 
 		mLineEdit = new QLineEdit(this);
-		mLineEdit->setFocusPolicy(Qt::NoFocus);
+                //mLineEdit->setFocusPolicy(Qt::NoFocus);
 		connect(mLineEdit, SIGNAL(textChanged(const QString&)), 
 				this, SLOT(slotTextChanged(const QString&)));
 
-		mMenu = QSoftMenuBar::menuFor(mLineEdit);
+#ifdef QTOPIA
+                mMenu = QSoftMenuBar::menuFor(mLineEdit);
+#else
+                mMenu = menu;
+#endif
 		mActionClear = mMenu->addAction(tr("Clear text"), this, SLOT(slotClearText()));
 		mActionClear->setVisible(false);
 		mActionDList = mMenu->addAction(tr("Dictionaries..."), this, SLOT(slotDictList()));
@@ -122,8 +130,10 @@ bool MainWindow::slotTextChanged(const QString& text)
 
 void MainWindow::paintEvent(QPaintEvent* event)
 {
+#ifdef QTOPIA
 	if (mLineEdit)
 		mLineEdit->setEditFocus(true);
+#endif
 
 	QWidget::paintEvent(event);
 }
