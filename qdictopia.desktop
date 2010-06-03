@@ -4,7 +4,7 @@ Context=QDictopia
 [Desktop Entry]
 Comment[]=A Dictionary Program
 Exec=qdictopia
-Icon=qdictopia/QDictopia
+Icon=qdictopia/qdictopia
 Type=Application
 Name[]=Dictionary
 Categories=MainApplications
