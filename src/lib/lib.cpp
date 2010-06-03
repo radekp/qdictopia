@@ -496,9 +496,13 @@ void offset_index::page_t::fill(gchar *data, gint nent, glong idx_)
 		entries[i].keystr=p;
 		len=strlen(p);
 		p+=len+1;
-		entries[i].off=g_ntohl(*reinterpret_cast<guint32 *>(p));
+        /*
+         * Can not use typecasting here, because *data does not have
+         * to be alligned and unalligned access fails on some architectures.
+         */
+		entries[i].off=((unsigned char)p[0] << 24) | ((unsigned char)p[1] << 16) | ((unsigned char)p[2] << 8) | (unsigned char)p[3];
 		p+=sizeof(guint32);
-		entries[i].size=g_ntohl(*reinterpret_cast<guint32 *>(p));
+		entries[i].size=((unsigned char)p[0] << 24) | ((unsigned char)p[1] << 16) | ((unsigned char)p[2] << 8) | (unsigned char)p[3];
 		p+=sizeof(guint32);
 	}
 }
