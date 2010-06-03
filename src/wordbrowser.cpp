@@ -1,4 +1,5 @@
 #include <QTextCodec>
+#include <QStack>
 #include "wordbrowser.h"
 
 WordBrowser::WordBrowser(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f)
@@ -8,7 +9,6 @@ WordBrowser::WordBrowser(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f
 	mTextEdit = new QTextEdit(this);
 	mTextEdit->setFocusPolicy(Qt::NoFocus);
 	mTextEdit->setReadOnly(true);
-
 	mLayout->addWidget(mTextEdit, 0, 0);
 }
 
@@ -19,168 +19,207 @@ bool WordBrowser::lookup(QString& word, Libs* lib)
 
 	for (int i = 0; i < lib->ndicts(); i++)
 	{
-		if (lib->LookupWord((gchar*)(word.toLatin1().data()), index, i))
+		if (lib->LookupWord((gchar*)(word.toUtf8().data()), index, i))
 		{
-			QString result = QString((char*)lib->poGetWord(index, i));
-			
-			if (result == word)
-			{	
-				const char* utf8_cstr;
-				QString uni_str;
-				QTextCodec* codec = QTextCodec::codecForName("UTF-8");
-
-				translation.append("<---");
-				utf8_cstr = lib->dict_name(i).data();
-				uni_str = codec->toUnicode(utf8_cstr);
-				translation.append(uni_str);
-				translation.append("--->");
-
-				utf8_cstr = (parse_data(lib->poGetWordData(index, i))).data();
-				uni_str = codec->toUnicode(utf8_cstr);
-				translation.append(uni_str);
-				translation.append(tr("\n\n"));
-			}
+		    QString result;
+		    translation.append("<span style='color:#99FF33;font-weight:bold'>");
+		    result = QString::fromUtf8(lib->dict_name(i).data());
+		    translation.append(result);
+		    translation.append("</span><br>");
+		    translation.append("<span style='color:#FFFF66;'>");
+		    result = QString::fromUtf8((char*)lib->poGetWord(index, i));
+		    translation.append(result);
+		    translation.append("</span><br>");
+		    result = parseData(lib->poGetWordData(index, i), i, true, false);
+		    translation.append(result);
+		    translation.append(tr("<hr>"));
 		}
 	}
 
 	if (translation.isEmpty())
 		translation = QString("Not found!");
 
-	mTextEdit->setText(translation);
+	mTextEdit->setHtml(translation);
 
 	return true;
 }
 
-std::string WordBrowser::xdxf2text(const char* p)
+void WordBrowser::xdxf2html(QString &str)
 {
-	std::string res;
-	for (; *p; ++p) {
-		if (*p!='<') {
-			if (g_str_has_prefix(p, "&gt;")) {
-				res+=">";
-				p+=3;
-			} else if (g_str_has_prefix(p, "&lt;")) {
-				res+="<";
-				p+=3;
-			} else if (g_str_has_prefix(p, "&amp;")) {
-				res+="&";
-				p+=4;
-			} else if (g_str_has_prefix(p, "&quot;")) {
-				res+="\"";
-				p+=5;
-			} else
-				res+=*p;
-			continue;
-		}
-
-		const char *next=strchr(p, '>');
-		if (!next)
-			continue;
-
-		std::string name(p+1, next-p-1);
-
-		if (name=="abr")
-			res+="";
-		else if (name=="/abr")
-			res+="";
-		else if (name=="k") {
-			const char *begin=next;
-			if ((next=strstr(begin, "</k>"))!=NULL)
-				next+=sizeof("</k>")-1-1;
-			else
-				next=begin;
-		} else if (name=="b")
-			res+="";
-		else if (name=="/b")
-			res+="";
-		else if (name=="i")
-			res+="";
-		else if (name=="/i")
-			res+="";
-		else if (name=="tr")
-			res+="[";
-		else if (name=="/tr")
-			res+="]";
-		else if (name=="ex")
-			res+="";
-		else if (name=="/ex")
-			res+="";
-		else if (!name.empty() && name[0]=='c' && name!="co") {
-			std::string::size_type pos=name.find("code");
-			if (pos!=std::string::size_type(-1)) {
-				pos+=sizeof("code=\"")-1;
-				std::string::size_type end_pos=name.find("\"");
-				std::string color(name, pos, end_pos-pos);
-				res+="";
-			} else {
-				res+="";
-			}
-		} else if (name=="/c")
-			res+="";
-
-		p=next;
-	}
-	return res;
+    str.replace("<abr>", "<font class=\"abbreviature\">");
+    str.replace("<tr>", "<font class=\"transcription\">[");
+    str.replace("</tr>", "]</font>");
+    str.replace("<ex>", "<font class=\"example\">");
+    str.replace(QRegExp("<k>.*<\\/k>"), "");
+    str.replace(QRegExp("(<\\/abr>)|(<\\ex>)"), "</font");
 }
 
-std::string WordBrowser::parse_data(const gchar* data)
+// taken from qstardict
+QString WordBrowser::parseData(const char *data, int dictIndex, bool htmlSpaces, bool reformatLists)
 {
-	if (!data)
-		return "";
+    QString result;
+    quint32 dataSize = *reinterpret_cast<const quint32*>(data);
+    const char *dataEnd = data + dataSize;
+    const char *ptr = data + sizeof(quint32);
+    while (ptr < dataEnd)
+    {
+        switch (*ptr++)
+        {
+            case 'm':
+            case 'l':
+            case 'g':
+            {
+                QString str = QString::fromUtf8(ptr);
+                ptr += str.toUtf8().length() + 1;
+                result += str;
+                break;
+            }
+            case 'x':
+            {
+                QString str = QString::fromUtf8(ptr);
+                ptr += str.toUtf8().length() + 1;
+                xdxf2html(str);
+                result += str;
+                break;
+            }
+            case 't':
+            {
+                QString str = QString::fromUtf8(ptr);
+                ptr += str.toUtf8().length() + 1;
+                result += "<font class=\"example\">";
+                result += str;
+                result += "</font>";
+                break;
+            }
+            case 'y':
+            {
+                ptr += strlen(ptr) + 1;
+                break;
+            }
+            case 'W':
+            case 'P':
+            {
+                ptr += *reinterpret_cast<const quint32*>(ptr) + sizeof(quint32);
+                break;
+            }
+            default:
+                ; // nothing
+        }
+    }
 
-	std::string res;
-	guint32 data_size, sec_size=0;
-	gchar *m_str;
-	const gchar *p=data;
-	data_size=*((guint32 *)p);
-	p+=sizeof(guint32);
-	while (guint32(p - data)<data_size) {
-		switch (*p++) {
-		case 'm':
-		case 'l': //need more work...
-		case 'g':
-			sec_size = strlen(p);
-			if (sec_size) {
-				res+="\n";
-				m_str = g_strndup(p, sec_size);
-				res += m_str;
-				g_free(m_str);
-			}
-			sec_size++;
-			break;
-		case 'x':
-			sec_size = strlen(p);
-			if (sec_size) {
-				res+="\n";
-				m_str = g_strndup(p, sec_size);
-				res += xdxf2text(m_str);
-				g_free(m_str);
-			}
-			sec_size++;
-			break;
-		case 't':
-			sec_size = strlen(p);
-			if(sec_size){
-				res+="\n";
-				m_str = g_strndup(p, sec_size);
-				res += "["+std::string(m_str)+"]";
-				g_free(m_str);
-			}
-			sec_size++;
-			break;
-		case 'y':
-			sec_size = strlen(p);
-			sec_size++;				
-			break;
-		case 'W':
-		case 'P':
-			sec_size=*((guint32 *)p);
-			sec_size+=sizeof(guint32);
-			break;
-		}
-		p += sec_size;
-	}
 
-  
-	return res;
+    if (reformatLists)
+    {
+        int pos = 0;
+        QStack<QChar> openedLists;
+        while (pos < result.length())
+        {
+            if (result[pos].isDigit())
+            {
+                int n = 0;
+                while (result[pos + n].isDigit())
+                    ++n;
+                pos += n;
+                if (result[pos] == '&' && result.mid(pos + 1, 3) == "gt;")
+                    result.replace(pos, 4, ">");
+                QChar marker = result[pos];
+                QString replacement;
+                if (marker == '>' || marker == '.' || marker == ')')
+                {
+                    if (n == 1 && result[pos - 1] == '1') // open new list
+                    {
+                        if (openedLists.contains(marker))
+                        {
+                            replacement = "</li></ol>";
+                            while (openedLists.size() && openedLists.top() != marker)
+                            {
+                                replacement += "</li></ol>";
+                                openedLists.pop();
+                            }
+                        }
+                        openedLists.push(marker);
+                        replacement += "<ol>";
+                    }
+                    else
+                    {
+                        while (openedLists.size() && openedLists.top() != marker)
+                        {
+                            replacement += "</li></ol>";
+                            openedLists.pop();
+                        }
+                        replacement += "</li>";
+                    }
+                    replacement += "<li>";
+                    pos -= n;
+                    n += pos;
+                    while (result[pos - 1].isSpace())
+                        --pos;
+                    while (result[n + 1].isSpace())
+                        ++n;
+                    result.replace(pos, n - pos + 1, replacement);
+                    pos += replacement.length();
+                }
+                else
+                    ++pos;
+            }
+            else
+                ++pos;
+        }
+        while (openedLists.size())
+        {
+            result += "</li></ol>";
+            openedLists.pop();
+        }
+    }
+    if (htmlSpaces)
+    {
+        int n = 0;
+        while (result[n].isSpace())
+            ++n;
+        result.remove(0, n);
+        n = 0;
+        while (result[result.length() - 1 - n].isSpace())
+            ++n;
+        result.remove(result.length() - n, n);
+
+        for (int pos = 0; pos < result.length();)
+        {
+            switch (result[pos].toAscii())
+            {
+                case '[':
+                    result.insert(pos, "<font class=\"transcription\">");
+                    pos += 28 + 1; // sizeof "<font class=\"transcription\">" + 1
+                    break;
+                case ']':
+                    result.insert(pos + 1, "</font>");
+                    pos += 7 + 1; // sizeof "</font>" + 1
+                    break;
+                case '\t':
+                    result.insert(pos, "&nbsp;&nbsp;&nbsp;&nbsp;");
+                    pos += 24 + 1; // sizeof "&nbsp;&nbsp;&nbsp;&nbsp;" + 1
+                    break;
+                case '\n':
+                {
+                    int count = 1;
+                    n = 1;
+                    while (result[pos + n].isSpace())
+                    {
+                        if (result[pos + n] == '\n')
+                            ++count;
+                        ++n;
+                    }
+                    if (count > 1)
+                        result.replace(pos, n, "</p><p>");
+                    else
+                        result.replace(pos, n, "<br>");
+                    break;
+                }
+                default:
+                    ++pos;
+            }
+        }
+    }
+    return result;
 }
+
+

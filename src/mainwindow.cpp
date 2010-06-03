@@ -82,7 +82,6 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 			mWordBrowser->setAttribute(Qt::WA_DeleteOnClose);
 			mWordBrowser->showMaximized();
 			mWordBrowser->lookup(word, mLibs);
-
 			break;
 	}
 	
@@ -91,41 +90,25 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 
 bool MainWindow::slotTextChanged(const QString& text)
 {
-	glong* index = (glong*)malloc(sizeof(glong) * mLibs->ndicts());
-	const gchar* word;
-	bool bfound = false;
 
-	if (text.isEmpty() && mActionClear->isVisible())
-		mActionClear->setVisible(false);
-	else if (!text.isEmpty() && !mActionClear->isVisible())
+    int MaxFuzzy=MAX_FUZZY;
+    const gchar* word;
+
+    if (text.isEmpty() && mActionClear->isVisible())
+       mActionClear->setVisible(false);
+    else if (!text.isEmpty() && !mActionClear->isVisible())
 		mActionClear->setVisible(true);
 
-	for (int i = 0; i < mLibs->ndicts(); i++)
-		if (mLibs->LookupWord((const gchar*)text.toLatin1().data(), index[i], i))
-			bfound = true;
-
-	for (int i = 0; i < mLibs->ndicts(); i++)
-		if (mLibs->LookupSimilarWord((const gchar*)text.toLatin1().data(), index[i], i))
-			bfound = true;
-	
-	if (bfound)
-	{
-		mListWidget->clear();
-
-		word = mLibs->poGetCurrentWord(index);
-		mListWidget->addItem(tr((const char*)word));
-	
-		for (int j = 0; j < MAX_FUZZY; j++)
-		{
-			if ((word = mLibs->poGetNextWord(NULL, index)))
-				mListWidget->addItem(tr((const char*)word));
-			else
-				break;
-		}		
-	}
-
-	free(index);
-	return true;
+    gchar *fuzzy_res[MaxFuzzy];
+    if (! mLibs->LookupWithFuzzy((const gchar*)text.toUtf8().data(), fuzzy_res, MaxFuzzy))
+        return true;
+    mListWidget->clear();
+    for (gchar **p = fuzzy_res, **end = fuzzy_res + MaxFuzzy; p != end && *p; ++p)
+    {
+        mListWidget->addItem(QString::fromUtf8((const char*)*p));
+        g_free(*p);
+    }
+    return true;
 }
 
 void MainWindow::paintEvent(QPaintEvent* event)
@@ -172,7 +155,7 @@ bool MainWindow::loadDicts()
 	// Retrieve all dict infors
 	mDictDir = QDir(DIC_PATH, "*.ifo");
 	for (unsigned int i = 0; i < mDictDir.count(); i++)
-		mLibs->load_dict(mDictDir.absoluteFilePath(mDictDir[i]).toLatin1().data());
+		mLibs->load_dict(mDictDir.absoluteFilePath(mDictDir[i]).toUtf8().data());
 
 	if (mLibs->ndicts() == 0)
 		return false;

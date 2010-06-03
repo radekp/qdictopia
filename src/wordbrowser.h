@@ -16,8 +16,8 @@ public:
 	bool lookup(QString& word, Libs* lib);
 
 private:
-	std::string parse_data(const gchar* data);
-	std::string xdxf2text(const char* p);
+	QString parseData(const char*, int, bool, bool);
+	void xdxf2html(QString&);
 
 private:
 	QGridLayout* mLayout;
