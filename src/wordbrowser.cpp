@@ -2,7 +2,7 @@
 #include <QStack>
 #include "wordbrowser.h"
 
-WordBrowser::WordBrowser(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f)
+WordBrowser::WordBrowser(QWidget* parent, Qt::WindowFlags f) : QDialog(parent, f)
 {
 	mLayout = new QGridLayout(this);
 

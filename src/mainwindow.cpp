@@ -1,5 +1,8 @@
 #include <QMessageBox>
 #include <QTimer>
+#ifdef QTOPIA
+#include <QtopiaApplication>
+#endif
 
 #include "mainwindow.h"
 
@@ -125,10 +128,14 @@ void MainWindow::slotItemActivated(QListWidgetItem* item)
 {
 	QString word = item->text();
 
-	mWordBrowser = new WordBrowser(this, Qt::Popup);
-	mWordBrowser->setAttribute(Qt::WA_DeleteOnClose);
-	mWordBrowser->showMaximized();
-	mWordBrowser->lookup(word, mLibs);
+        mWordBrowser = new WordBrowser(this, Qt::Popup);
+        mWordBrowser->setAttribute(Qt::WA_DeleteOnClose);
+        mWordBrowser->lookup(word, mLibs);
+        mWordBrowser->showMaximized();
+        mWordBrowser->exec();
+#ifdef QTOPIA
+        QtopiaApplication::showInputMethod();
+#endif
 }
 
 void MainWindow::slotClearText()

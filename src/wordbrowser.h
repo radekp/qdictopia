@@ -3,13 +3,14 @@
 
 #include <string>
 
+#include <QDialog>
 #include <QWidget>
 #include <QTextEdit>
 #include <QGridLayout>
 
 #include "lib/lib.h"
 
-class WordBrowser : public QWidget
+class WordBrowser : public QDialog
 {
 public:
 	WordBrowser(QWidget* parent = 0, Qt::WindowFlags f = 0);
