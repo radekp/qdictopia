@@ -3,7 +3,9 @@
 
 #include <QMainWindow>
 #include <QMenuBar>
-
+#ifdef QTOPIA
+#include <QSoftMenuBar>
+#endif
 #include "mainwindow.h"
 
 class QDictOpia : public QMainWindow
